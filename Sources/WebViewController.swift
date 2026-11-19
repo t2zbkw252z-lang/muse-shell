@@ -60,6 +60,7 @@ final class WebViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         disableKeyboardAccessory(in: webView)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
         if !didAskToken, (UserDefaults.standard.string(forKey: "panelToken") ?? "").isEmpty, bundledToken.isEmpty {
             didAskToken = true
             askForToken()
@@ -89,6 +90,22 @@ final class WebViewController: UIViewController {
             self?.loadPanel(token: token)
         })
         present(alert, animated: true)
+    }
+
+    @objc private func keyboardDidShow() {
+        let windows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+        for window in windows { hideAssistantBar(in: window) }
+    }
+
+    private func hideAssistantBar(in view: UIView) {
+        let name = NSStringFromClass(type(of: view))
+        if name.contains("AssistantBar") || name.contains("CandidateBar") || name.contains("PredictionBar") || name.contains("KeyboardToolbar") {
+            view.isHidden = true
+            return
+        }
+        for sub in view.subviews { hideAssistantBar(in: sub) }
     }
 
     private func disableKeyboardAccessory(in view: UIView) {

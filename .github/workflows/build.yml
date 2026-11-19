@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
 
@@ -21,16 +21,6 @@ jobs:
         run: |
           set -o pipefail
           xcodebuild \
-            -project MuseShell.xcodeproj \
-            -scheme MuseShell \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            build | xcpretty || xcodebuild \
             -project MuseShell.xcodeproj \
             -scheme MuseShell \
             -configuration Release \

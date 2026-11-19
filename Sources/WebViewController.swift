@@ -6,13 +6,13 @@ final class WebViewController: UIViewController {
     private var webView: WKWebView!
     private var didAskToken = false
 
-    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
     override var prefersStatusBarHidden: Bool { false }
     override var prefersHomeIndicatorAutoHidden: Bool { false }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .black
+        view.backgroundColor = .white
 
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
@@ -20,21 +20,20 @@ final class WebViewController: UIViewController {
 
         let webView = NoAccessoryWebView(frame: .zero, configuration: config)
         webView.translatesAutoresizingMaskIntoConstraints = false
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.backgroundColor = .clear
+        webView.isOpaque = true
+        webView.backgroundColor = .white
+        webView.scrollView.backgroundColor = .white
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
         webView.allowsBackForwardNavigationGestures = true
         webView.navigationDelegate = self
 
         view.addSubview(webView)
-        view.keyboardLayoutGuide.followsUndockedKeyboard = true
         NSLayoutConstraint.activate([
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             webView.topAnchor.constraint(equalTo: view.topAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         self.webView = webView
 
@@ -103,23 +102,5 @@ private final class NoAccessoryWebView: WKWebView {
 extension WebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         disableKeyboardAccessory(in: webView)
-        injectSafeAreaCSS()
-    }
-
-    private func injectSafeAreaCSS() {
-        let top = Int(view.safeAreaInsets.top.rounded())
-        let bottom = Int(view.safeAreaInsets.bottom.rounded())
-        let css = """
-        #chatView .chat-header{top:\(top)px !important}
-        #chatView .msg-list{padding-top:calc(\(top)px + 12rem) !important}
-        #chatView .input-float{padding-bottom:calc(\(bottom)px + 10px) !important}
-        #chatView .input-float.kb-up{padding-bottom:6px !important}
-        """
-        let escaped = css
-            .replacingOccurrences(of: "\\", with: "\\\\")
-            .replacingOccurrences(of: "\"", with: "\\\"")
-            .replacingOccurrences(of: "\n", with: "\\n")
-        let js = "var s=document.getElementById('native-safe')||document.createElement('style');s.id='native-safe';s.textContent=\"\(escaped)\";document.head.appendChild(s);"
-        webView.evaluateJavaScript(js, completionHandler: nil)
     }
 }

@@ -2,7 +2,7 @@ import UIKit
 import WebKit
 
 final class WebViewController: UIViewController {
-    private let startURL = URL(string: "https://muse.yuwan2026.online/?token=8cf94db4cd50e2621e0a1d87370269f1")!
+    private let baseURL = "https://muse.yuwan2026.online/"
     private var webView: WKWebView!
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
@@ -35,7 +35,12 @@ final class WebViewController: UIViewController {
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         self.webView = webView
-        webView.load(URLRequest(url: startURL))
+
+        if let token = UserDefaults.standard.string(forKey: "panelToken"), !token.isEmpty {
+            loadPanel(token: token)
+        } else {
+            askForToken()
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -43,13 +48,37 @@ final class WebViewController: UIViewController {
         disableKeyboardAccessory(in: webView)
     }
 
+    private func loadPanel(token: String) {
+        guard let url = URL(string: baseURL + "?token=" + token) else { return }
+        webView.load(URLRequest(url: url))
+    }
+
+    private func askForToken() {
+        let alert = UIAlertController(
+            title: "Muse 面板",
+            message: "输入面板 token，只需一次",
+            preferredStyle: .alert
+        )
+        alert.addTextField { field in
+            field.placeholder = "token"
+            field.autocapitalizationType = .none
+            field.autocorrectionType = .no
+        }
+        alert.addAction(UIAlertAction(title: "打开", style: .default) { [weak self, weak alert] _ in
+            let token = alert?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !token.isEmpty else { self?.askForToken(); return }
+            UserDefaults.standard.set(token, forKey: "panelToken")
+            self?.loadPanel(token: token)
+        })
+        present(alert, animated: true)
+    }
+
     private func disableKeyboardAccessory(in view: UIView) {
         for subview in view.subviews {
-            if let textInput = subview as? UITextInput, let responder = subview as? UIResponder {
+            if let responder = subview as? UIResponder {
                 let item = responder.inputAssistantItem
                 item.leadingBarButtonGroups = []
                 item.trailingBarButtonGroups = []
-                _ = textInput
             }
             disableKeyboardAccessory(in: subview)
         }

@@ -4,6 +4,7 @@ import WebKit
 final class WebViewController: UIViewController {
     private let baseURL = "https://muse.yuwan2026.online/"
     private var webView: WKWebView!
+    private var didAskToken = false
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var prefersStatusBarHidden: Bool { false }
@@ -38,14 +39,16 @@ final class WebViewController: UIViewController {
 
         if let token = UserDefaults.standard.string(forKey: "panelToken"), !token.isEmpty {
             loadPanel(token: token)
-        } else {
-            askForToken()
         }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         disableKeyboardAccessory(in: webView)
+        if !didAskToken, (UserDefaults.standard.string(forKey: "panelToken") ?? "").isEmpty {
+            didAskToken = true
+            askForToken()
+        }
     }
 
     private func loadPanel(token: String) {
@@ -66,7 +69,7 @@ final class WebViewController: UIViewController {
         }
         alert.addAction(UIAlertAction(title: "打开", style: .default) { [weak self, weak alert] _ in
             let token = alert?.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            guard !token.isEmpty else { self?.askForToken(); return }
+            guard !token.isEmpty else { self?.didAskToken = false; self?.askForToken(); return }
             UserDefaults.standard.set(token, forKey: "panelToken")
             self?.loadPanel(token: token)
         })

@@ -68,7 +68,7 @@ final class WebViewController: UIViewController {
 
     private func loadPanel(token: String) {
         guard let url = URL(string: baseURL + "?token=" + token) else { return }
-        webView.load(URLRequest(url: url))
+        webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
     }
 
     private func askForToken() {

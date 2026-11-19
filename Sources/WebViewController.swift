@@ -6,6 +6,9 @@ final class WebViewController: UIViewController {
     private var webView: WKWebView!
     private var didAskToken = false
     private var hapticBridge: HapticBridge?
+    private var bundledToken: String {
+        (Bundle.main.object(forInfoDictionaryKey: "PanelToken") as? String) ?? ""
+    }
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .default }
     override var prefersStatusBarHidden: Bool { false }
@@ -46,7 +49,10 @@ final class WebViewController: UIViewController {
         ])
         self.webView = webView
 
-        if let token = UserDefaults.standard.string(forKey: "panelToken"), !token.isEmpty {
+        let savedToken = UserDefaults.standard.string(forKey: "panelToken") ?? ""
+        let token = savedToken.isEmpty ? bundledToken : savedToken
+        if !token.isEmpty {
+            UserDefaults.standard.set(token, forKey: "panelToken")
             loadPanel(token: token)
         }
     }
@@ -54,7 +60,7 @@ final class WebViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         disableKeyboardAccessory(in: webView)
-        if !didAskToken, (UserDefaults.standard.string(forKey: "panelToken") ?? "").isEmpty {
+        if !didAskToken, (UserDefaults.standard.string(forKey: "panelToken") ?? "").isEmpty, bundledToken.isEmpty {
             didAskToken = true
             askForToken()
         }

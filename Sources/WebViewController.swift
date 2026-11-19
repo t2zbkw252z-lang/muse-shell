@@ -98,6 +98,18 @@ final class WebViewController: UIViewController {
                 item.leadingBarButtonGroups = []
                 item.trailingBarButtonGroups = []
             }
+            if let field = subview as? UITextField {
+                field.autocorrectionType = .no
+                field.spellCheckingType = .no
+                field.smartQuotesType = .no
+                field.smartDashesType = .no
+            }
+            if let textView = subview as? UITextView {
+                textView.autocorrectionType = .no
+                textView.spellCheckingType = .no
+                textView.smartQuotesType = .no
+                textView.smartDashesType = .no
+            }
             disableKeyboardAccessory(in: subview)
         }
     }
@@ -139,6 +151,8 @@ private final class HapticBridge: NSObject, WKScriptMessageHandler {
 }
 
 private final class NoAccessoryWebView: WKWebView {
+    private let zeroAccessory = UIView(frame: .zero)
+
     override var inputAssistantItem: UITextInputAssistantItem {
         let item = super.inputAssistantItem
         item.leadingBarButtonGroups = []
@@ -146,7 +160,8 @@ private final class NoAccessoryWebView: WKWebView {
         return item
     }
 
-    override var inputAccessoryView: UIView? { nil }
+    // 用 0 高度的自定义 accessory 顶掉系统那条空辅助栏
+    override var inputAccessoryView: UIView? { zeroAccessory }
 }
 
 extension WebViewController: WKNavigationDelegate {

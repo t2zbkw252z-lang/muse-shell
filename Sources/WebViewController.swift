@@ -34,7 +34,7 @@ final class WebViewController: UIViewController {
         webView.scrollView.decelerationRate = .normal
         webView.scrollView.showsVerticalScrollIndicator = false
         webView.scrollView.keyboardDismissMode = .interactive
-        webView.allowsBackForwardNavigationGestures = true
+        webView.allowsBackForwardNavigationGestures = false
         webView.navigationDelegate = self
 
         view.addSubview(webView)

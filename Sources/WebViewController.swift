@@ -68,8 +68,16 @@ final class WebViewController: UIViewController {
     }
 
     private func loadPanel(token: String) {
-        guard let url = URL(string: baseURL + "?token=" + token) else { return }
-        webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
+        guard var comps = URLComponents(string: baseURL) else { return }
+        comps.queryItems = [
+            URLQueryItem(name: "token", value: token),
+            URLQueryItem(name: "_", value: String(Int(Date().timeIntervalSince1970)))
+        ]
+        guard let url = comps.url else { return }
+        let types: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
+        WKWebsiteDataStore.default().removeData(ofTypes: types, modifiedSince: .distantPast) {
+            self.webView.load(URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30))
+        }
     }
 
     private func askForToken() {

@@ -5,6 +5,7 @@ final class WebViewController: UIViewController {
     private let baseURL = "https://muse.yuwan2026.online/"
     private var webView: WKWebView!
     private var didAskToken = false
+    private var hapticBridge: HapticBridge?
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .default }
     override var prefersStatusBarHidden: Bool { false }
@@ -18,6 +19,11 @@ final class WebViewController: UIViewController {
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
 
+        let bridge = HapticBridge()
+        config.userContentController.add(bridge, name: "haptic")
+        config.userContentController.addUserScript(WKUserScript(source: Self.hapticScript, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        self.hapticBridge = bridge
+
         let webView = NoAccessoryWebView(frame: .zero, configuration: config)
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.isOpaque = true
@@ -25,6 +31,9 @@ final class WebViewController: UIViewController {
         webView.scrollView.backgroundColor = .systemBackground
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
+        webView.scrollView.decelerationRate = .normal
+        webView.scrollView.showsVerticalScrollIndicator = false
+        webView.scrollView.keyboardDismissMode = .interactive
         webView.allowsBackForwardNavigationGestures = true
         webView.navigationDelegate = self
 
@@ -85,6 +94,41 @@ final class WebViewController: UIViewController {
             }
             disableKeyboardAccessory(in: subview)
         }
+    }
+}
+
+private extension WebViewController {
+    static let hapticScript = """
+    (function(){
+      if (window.__museHapticInstalled) return;
+      window.__museHapticInstalled = true;
+      var last = 0;
+      document.addEventListener('touchstart', function(e){
+        var el = e.target && e.target.closest ? e.target.closest('button, [role="button"], .status-card, .search-item, .msg-hit, .drawer-item, .switcher-item, .input-plus, .send-btn') : null;
+        if (!el || el.disabled) return;
+        var now = Date.now();
+        if (now - last < 45) return;
+        last = now;
+        try { window.webkit.messageHandlers.haptic.postMessage('light'); } catch (_) {}
+      }, {passive:true, capture:true});
+    })();
+    """
+}
+
+private final class HapticBridge: NSObject, WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "haptic" else { return }
+        let kind = message.body as? String
+        if kind == "selection" {
+            let g = UISelectionFeedbackGenerator()
+            g.prepare()
+            g.selectionChanged()
+            return
+        }
+        let style: UIImpactFeedbackGenerator.FeedbackStyle = (kind == "medium") ? .medium : .light
+        let g = UIImpactFeedbackGenerator(style: style)
+        g.prepare()
+        g.impactOccurred()
     }
 }
 

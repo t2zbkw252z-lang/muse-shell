@@ -6,13 +6,13 @@ final class WebViewController: UIViewController {
     private var webView: WKWebView!
     private var didAskToken = false
 
-    override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
+    override var preferredStatusBarStyle: UIStatusBarStyle { .default }
     override var prefersStatusBarHidden: Bool { false }
     override var prefersHomeIndicatorAutoHidden: Bool { false }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .white
+        view.backgroundColor = .systemBackground
 
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
@@ -21,8 +21,8 @@ final class WebViewController: UIViewController {
         let webView = NoAccessoryWebView(frame: .zero, configuration: config)
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.isOpaque = true
-        webView.backgroundColor = .white
-        webView.scrollView.backgroundColor = .white
+        webView.backgroundColor = .systemBackground
+        webView.scrollView.backgroundColor = .systemBackground
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.scrollView.bounces = false
         webView.allowsBackForwardNavigationGestures = true

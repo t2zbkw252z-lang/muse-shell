@@ -14,6 +14,15 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Inject panel token
+        env:
+          PANEL_TOKEN: ${{ secrets.PANEL_TOKEN }}
+        run: |
+          if [ -n "$PANEL_TOKEN" ]; then
+            /usr/libexec/PlistBuddy -c "Add :PanelToken string $PANEL_TOKEN" Sources/Info.plist 2>/dev/null || \
+            /usr/libexec/PlistBuddy -c "Set :PanelToken $PANEL_TOKEN" Sources/Info.plist
+          fi
+
       - name: Generate Xcode project
         run: xcodegen generate
 

@@ -148,7 +148,17 @@ private extension WebViewController {
       window.__museHapticInstalled = true;
       var last = 0;
       document.addEventListener('touchstart', function(e){
-        var el = e.target && e.target.closest ? e.target.closest('button, [role="button"], .status-card, .search-item, .msg-hit, .drawer-item, .switcher-item, .input-plus, .send-btn') : null;
+        var sel = 'button, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [role="switch"], [role="checkbox"], [role="radio"], [role="link"], a[href], summary, label, [tabindex]:not([tabindex="-1"]), .status-card, .search-item, .msg-hit, .drawer-item, .switcher-item, .input-plus, .send-btn';
+        var el = e.target && e.target.closest ? e.target.closest(sel) : null;
+        // 有些按钮是 div + onclick，没有 role：退一步看光标是不是手型
+        if (!el && e.target && e.target.closest) {
+          var cur = e.target.closest('*');
+          while (cur && cur !== document.body) {
+            var st = window.getComputedStyle(cur);
+            if (st && st.cursor === 'pointer') { el = cur; break; }
+            cur = cur.parentElement;
+          }
+        }
         if (!el || el.disabled) return;
         var now = Date.now();
         if (now - last < 45) return;

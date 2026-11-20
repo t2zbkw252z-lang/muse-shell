@@ -7,6 +7,7 @@ final class WebViewController: UIViewController {
     private var webView: WKWebView!
     private var hapticBridge: HapticBridge?
     private var didLoad = false
+    private var statusLabel: UILabel!
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .default }
     override var prefersStatusBarHidden: Bool { false }
@@ -46,6 +47,28 @@ final class WebViewController: UIViewController {
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         self.webView = webView
+
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 0
+        label.font = .systemFont(ofSize: 12)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.text = "启动中…"
+        view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 24),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -24)
+        ])
+        self.statusLabel = label
+        label.isHidden = false
+    }
+
+    private func setStatus(_ text: String, visible: Bool = true) {
+        statusLabel.text = text
+        statusLabel.isHidden = !visible
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -72,6 +95,7 @@ final class WebViewController: UIViewController {
 
         var req = URLRequest(url: url)
         req.timeoutInterval = 12
+        setStatus("正在取 DSH 链接…")
         showLoading(true)
         URLSession.shared.dataTask(with: req) { [weak self] data, _, _ in
             guard let self else { return }
@@ -81,7 +105,11 @@ final class WebViewController: UIViewController {
             }
             DispatchQueue.main.async {
                 self.showLoading(false)
-                if target.isEmpty { self.showOffline(); return }
+                if target.isEmpty {
+                    self.setStatus("取链接失败，点重试")
+                    self.showOffline(); return
+                }
+                self.setStatus("正在打开 DSH…")
                 guard let u = URL(string: target) else { return }
                 let types: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
                 WKWebsiteDataStore.default().removeData(ofTypes: types, modifiedSince: .distantPast) {
@@ -230,6 +258,16 @@ private final class NoAccessoryWebView: WKWebView {
 extension WebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         disableKeyboardAccessory(in: webView)
+        view.viewWithTag(8801)?.isHidden = true
+        statusLabel?.isHidden = true
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        setStatus("打开失败：" + error.localizedDescription)
+    }
+
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        setStatus("加载失败：" + error.localizedDescription)
     }
 }
 

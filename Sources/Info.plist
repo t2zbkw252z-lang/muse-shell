@@ -36,6 +36,16 @@
   <dict>
     <key>NSAllowsArbitraryLoads</key>
     <false/>
+    <key>NSExceptionDomains</key>
+    <dict>
+      <key>sslip.io</key>
+      <dict>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+        <key>NSExceptionAllowsInsecureHTTPLoads</key>
+        <true/>
+      </dict>
+    </dict>
   </dict>
 </dict>
 </plist>

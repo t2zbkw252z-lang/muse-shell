@@ -1,0 +1,51 @@
+name: build-dsh-shell
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'dsh/**'
+      - '.github/workflows/build-dsh.yml'
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+        working-directory: dsh
+
+      - name: Build unsigned app
+        working-directory: dsh
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project DSHShell.xcodeproj \
+            -scheme DSHShell \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package IPA
+        working-directory: dsh
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/DSHShell.app Payload/
+          zip -qr DSHShell.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: DSHShell-unsigned-ipa
+          path: dsh/DSHShell.ipa

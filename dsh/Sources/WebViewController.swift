@@ -66,6 +66,16 @@ final class WebViewController: UIViewController {
         label.isHidden = false
     }
 
+    private var watchdog: Timer?
+
+    private func startLoadWatchdog() {
+        watchdog?.invalidate()
+        watchdog = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            self.setStatus("10 秒还没加载出来\n可能是 ATS 拦了 http\n或者网络不通")
+        }
+    }
+
     private func setStatus(_ text: String, visible: Bool = true) {
         statusLabel.text = text
         statusLabel.isHidden = !visible
@@ -109,7 +119,8 @@ final class WebViewController: UIViewController {
                     self.setStatus("取链接失败，点重试")
                     self.showOffline(); return
                 }
-                self.setStatus("正在打开 DSH…")
+                self.setStatus("正在打开 DSH…\n" + target)
+                self.startLoadWatchdog()
                 guard let u = URL(string: target) else { return }
                 let types: Set<String> = [WKWebsiteDataTypeDiskCache, WKWebsiteDataTypeMemoryCache]
                 WKWebsiteDataStore.default().removeData(ofTypes: types, modifiedSince: .distantPast) {
@@ -256,9 +267,21 @@ private final class NoAccessoryWebView: WKWebView {
 }
 
 extension WebViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        setStatus("开始加载…")
+    }
+
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        setStatus("已收到内容，渲染中…")
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        decisionHandler(.allow)
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         disableKeyboardAccessory(in: webView)
-        view.viewWithTag(8801)?.isHidden = true
+        watchdog?.invalidate()
         statusLabel?.isHidden = true
     }
 

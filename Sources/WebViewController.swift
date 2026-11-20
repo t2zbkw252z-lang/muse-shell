@@ -39,6 +39,7 @@ final class WebViewController: UIViewController {
         webView.scrollView.keyboardDismissMode = .interactive
         webView.allowsBackForwardNavigationGestures = false
         webView.navigationDelegate = self
+        webView.uiDelegate = self
 
         view.addSubview(webView)
         NSLayoutConstraint.activate([
@@ -192,5 +193,16 @@ private final class NoAccessoryWebView: WKWebView {
 extension WebViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         disableKeyboardAccessory(in: webView)
+    }
+}
+
+extension WebViewController: WKUIDelegate {
+    // window.open(url, "_blank") 之类的新窗口请求：交给系统浏览器打开，
+    // 这样 http 的 DSH 链接在 WKWebView（ATS 限制）里也能正常跳转。
+    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        if let url = navigationAction.request.url {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
+        return nil
     }
 }
